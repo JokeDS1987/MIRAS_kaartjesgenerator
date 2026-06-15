@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIRAS Kaartjesgenerator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Avenir, Calibri, 'Segoe UI', sans-serif; background: #F7F6F3; color: #1D1D1B; min-height: 100vh; padding: 2.5rem 1rem 4rem; }
+  .container { max-width: 660px; margin: 0 auto; }
+  .mint-stripe { height: 5px; border-radius: 3px; background: linear-gradient(90deg, #89CCCA 0%, #DBBFDD 50%, #FFCC00 100%); opacity: 0.7; margin-bottom: 1.75rem; }
+  .accent-bar { width: 36px; height: 3px; background: #EA5B0C; border-radius: 2px; margin-bottom: 10px; }
+  h1 { font-size: 24px; font-weight: 600; color: #EA5B0C; letter-spacing: -0.3px; }
+  .sub { font-size: 14px; color: #5a5a58; margin-top: 7px; line-height: 1.55; margin-bottom: 2rem; }
+  .section { background: #fff; border: 1px solid #e8e6e1; border-radius: 14px; padding: 1.4rem 1.5rem; margin-bottom: 1rem; }
+  .sec-title { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #EA5B0C; margin-bottom: 1.1rem; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 520px) { .g2 { grid-template-columns: 1fr; } }
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 12.5px; color: #5a5a58; margin-bottom: 5px; font-weight: 500; }
+  input, select, textarea { width: 100%; font-size: 14px; padding: 9px 13px; border: 1px solid #dddbd6; border-radius: 8px; background: #faf9f7; color: #1D1D1B; font-family: inherit; transition: border-color 0.15s; appearance: auto; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #EA5B0C; background: #fff; }
+  textarea { resize: vertical; min-height: 72px; line-height: 1.55; }
+  .toon-picker { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .toon-tag { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid #dddbd6; border-radius: 10px; background: #faf9f7; color: #1D1D1B; font-size: 14px; font-family: inherit; cursor: pointer; transition: all 0.15s; text-align: left; width: 100%; }
+  .toon-tag:hover { border-color: #EA5B0C; background: #fff8f5; }
+  .toon-tag.actief { background: #fff4ee; border-color: #EA5B0C; border-width: 1.5px; }
+  .toon-tag.actief .toon-naam { color: #EA5B0C; font-weight: 600; }
+  .toon-emoji { font-size: 20px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+  .toon-info { display: flex; flex-direction: column; gap: 2px; }
+  .toon-naam { font-size: 14px; font-weight: 500; color: #1D1D1B; line-height: 1.3; }
+  .toon-context { font-size: 12px; color: #8a8a87; line-height: 1.4; }
+  .toon-check { margin-left: auto; flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #dddbd6; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all 0.15s; }
+  .toon-tag.actief .toon-check { background: #EA5B0C; border-color: #EA5B0C; }
+  .toon-check svg { width: 10px; height: 10px; stroke: #fff; fill: none; stroke-width: 2.5; display: none; }
+  .toon-tag.actief .toon-check svg { display: block; }
+  .btn-gen { width: 100%; padding: 13px; background: #EA5B0C; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 1rem; letter-spacing: 0.1px; transition: opacity 0.15s, transform 0.1s; }
+  .btn-gen:hover { opacity: 0.88; }
+  .btn-gen:active { transform: scale(0.99); }
+  .output { display: none; margin-top: 1.75rem; }
+  .output.on { display: block; }
+  .output-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.9px; color: #89CCCA; margin-bottom: 0.9rem; }
+  .card-r { background: #fff; border: 1px solid #e8e6e1; border-radius: 14px; padding: 1.4rem 1.5rem; margin-bottom: 1rem; }
+  .vlabel { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #EA5B0C; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 6px; }
+  .vlabel svg { width: 14px; height: 14px; stroke: #EA5B0C; fill: none; stroke-width: 2; }
+  .variant-hint { font-size: 11px; color: #aaa9a5; margin-bottom: 0.75rem; }
+  .tekst { font-size: 15px; line-height: 1.8; color: #1D1D1B; white-space: pre-wrap; font-style: italic; }
+  .btn-copy { display: inline-flex; align-items: center; gap: 6px; margin-top: 1rem; padding: 7px 15px; background: transparent; border: 1px solid #dddbd6; border-radius: 8px; font-size: 13px; color: #5a5a58; cursor: pointer; font-family: inherit; transition: background 0.12s, border-color 0.12s; }
+  .btn-copy:hover { background: #faf9f7; border-color: #b0aea8; }
+  .btn-copy svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .btn-copy.ok { color: #089a8a; border-color: #89CCCA; }
+  .footer { text-align: center; margin-top: 3rem; font-size: 12px; color: #aaa9a5; }
+  .footer span { color: #EA5B0C; }
+@keyframes pulse { 0%,80%,100%{opacity:0.15} 40%{opacity:1} }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="mint-stripe"></div>
+  <div class="accent-bar"></div>
+  <h1>MIRAS Kaartjesgenerator</h1>
+  <p class="sub">Schrijf een warm kaartje dat iemand echt doet voelen: jij wordt gezien.</p>
+
+  <div class="section">
+    <div class="sec-title">Over de ontvanger</div>
+    <div class="g2">
+      <div class="field">
+        <label for="naam">Naam ontvanger</label>
+        <input id="naam" type="text" placeholder="Voornaam (+ naam)">
+      </div>
+      <div class="field">
+        <label for="functie">Functie</label>
+        <input id="functie" type="text" placeholder="bv. lesgever, administratief medewerker">
+      </div>
+    </div>
+    <div class="g2">
+      <div class="field">
+        <label for="team">Opleiding of dienst</label>
+        <input id="team" type="text" placeholder="bv. Talen, Logistiek, P&O">
+      </div>
+      <div class="field">
+        <label for="domein">Lesdomein / vakgebied / expertise</label>
+        <input id="domein" type="text" placeholder="bv. Frans, ICT, Zorg &amp; Welzijn">
+      </div>
+    </div>
+    <div class="field">
+      <label for="interesses">Persoonlijke kenmerken of sterktes</label>
+      <input id="interesses" type="text" placeholder="bv. altijd aanspreekbaar, rust uitstralend, creatief">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Situatie &amp; toon</div>
+    <div class="field">
+      <label for="situatie">Situatie</label>
+      <select id="situatie">
+        <option value="">— Kies een situatie —</option>
+        <option>Pensioen</option>
+        <option>Vertrek uit de organisatie</option>
+        <option>Nieuwe professionele uitdaging</option>
+        <option>Bijzondere inzet</option>
+        <option>Bedanking</option>
+        <option>Jubileum</option>
+        <option>Moeilijke periode</option>
+        <option>Ziekte of herstel</option>
+        <option>Iemand die veel betekend heeft voor MIRAS</option>
+        <option>Andere</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Toon <span style="font-weight:400;color:#aaa9a5;">(kies één of meerdere)</span></label>
+      <div class="toon-picker" id="toonPicker">
+        <button type="button" class="toon-tag" data-toon="warm-waarderend">
+          <span class="toon-emoji">🌱</span>
+          <span class="toon-info">
+            <span class="toon-naam">Warm en waarderend</span>
+            <span class="toon-context">Voor bedankjes, jubilea, bijzondere inzet of samenwerking</span>
+          </span>
+          <span class="toon-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></span>
+        </button>
+        <button type="button" class="toon-tag" data-toon="feestelijk">
+          <span class="toon-emoji">🎉</span>
+          <span class="toon-info">
+            <span class="toon-naam">Feestelijk en enthousiast</span>
+            <span class="toon-context">Voor mijlpalen, diploma's, nieuwe functies of afgeronde projecten</span>
+          </span>
+          <span class="toon-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></span>
+        </button>
+        <button type="button" class="toon-tag" data-toon="zorgzaam">
+          <span class="toon-emoji">❤️</span>
+          <span class="toon-info">
+            <span class="toon-naam">Zorgzaam en ondersteunend</span>
+            <span class="toon-context">Voor beterschap, moeilijke momenten of afscheid</span>
+          </span>
+          <span class="toon-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></span>
+        </button>
+        <button type="button" class="toon-tag" data-toon="verbindend">
+          <span class="toon-emoji">🤝</span>
+          <span class="toon-info">
+            <span class="toon-naam">Verbindend en collegiaal</span>
+            <span class="toon-context">Voor welkomst, afscheid of teammomenten</span>
+          </span>
+          <span class="toon-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></span>
+        </button>
+        <button type="button" class="toon-tag" data-toon="inspirerend">
+          <span class="toon-emoji">🌟</span>
+          <span class="toon-info">
+            <span class="toon-naam">Inspirerend en activerend</span>
+            <span class="toon-context">Om mensen aan te moedigen hun potentieel te ontdekken</span>
+          </span>
+          <span class="toon-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></span>
+        </button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="context">Extra context (optioneel)</label>
+      <textarea id="context" placeholder="Voeg toe wat de tekst persoonlijker maakt — een anekdote, een eigenschap, iets wat je wil benoemen…"></textarea>
+    </div>
+  </div>
+
+  <button class="btn-gen" id="genBtn" onclick="genereer()">Genereer kaarttekst</button>
+<div id="loader" style="display:none; text-align:center; padding: 1.5rem 0; color: #5a5a58; font-size: 14px;">
+  <div style="display:inline-flex; gap: 6px; align-items:center;">
+    <span style="width:8px;height:8px;border-radius:50%;background:#EA5B0C;animation:pulse 1.2s infinite"></span>
+    <span style="width:8px;height:8px;border-radius:50%;background:#EA5B0C;animation:pulse 1.2s 0.2s infinite"></span>
+    <span style="width:8px;height:8px;border-radius:50%;background:#EA5B0C;animation:pulse 1.2s 0.4s infinite"></span>
+    <span style="margin-left:8px;">Kaarttekst wordt geschreven…</span>
+  </div>
+</div>
+
+  <div class="output" id="output">
+    <div class="output-header">Jouw kaartteksten</div>
+    <div class="card-r">
+      <div class="vlabel">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Variant 1
+      </div>
+      <p class="variant-hint">Kort en direct — 3 à 4 zinnen</p>
+      <div class="tekst" id="v1"></div>
+      <button class="btn-copy" onclick="kopieer('v1', this)">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Kopieer tekst
+      </button>
+    </div>
+    <div class="card-r">
+      <div class="vlabel">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Variant 2
+      </div>
+      <p class="variant-hint">Warmer en persoonlijker — 5 à 6 zinnen</p>
+      <div class="tekst" id="v2"></div>
+      <button class="btn-copy" onclick="kopieer('v2', this)">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Kopieer tekst
+      </button>
+    </div>
+  </div>
+
+  <div class="footer">cvo <span>MIRAS</span> · Kaartjesgenerator</div>
+</div>
+
+<script>
+document.querySelectorAll('.toon-tag').forEach(btn => {
+  btn.addEventListener('click', () => btn.classList.toggle('actief'));
+});
+
+function getGekozenTonen() {
+  return [...document.querySelectorAll('.toon-tag.actief')].map(b => b.dataset.toon);
+}
+
+const toonLabels = {
+  "warm-waarderend": "warm en waarderend (persoonlijk, oprecht, dankbaar)",
+  "feestelijk":      "feestelijk en enthousiast (positief, energiek, motiverend)",
+  "zorgzaam":        "zorgzaam en ondersteunend (empathisch, warm, eenvoudig)",
+  "verbindend":      "verbindend en collegiaal (inclusief, toegankelijk, collegiaal)",
+  "inspirerend":     "inspirerend en activerend (hoopvol, toekomstgericht, aanmoedigend)",
+};
+
+async function genereer() {
+  const naam        = document.getElementById('naam').value.trim();
+  const functie     = document.getElementById('functie').value.trim();
+  const team        = document.getElementById('team').value.trim();
+  const domein      = document.getElementById('domein').value.trim();
+  const interesses  = document.getElementById('interesses').value.trim();
+  const ctx         = document.getElementById('context').value.trim();
+  const situatie    = document.getElementById('situatie').value;
+  const tonen       = getGekozenTonen();
+
+  if (!naam || !situatie) { alert('Vul minstens de naam en situatie in.'); return; }
+  if (tonen.length === 0) { alert('Kies minstens één toon.'); return; }
+
+  const btn = document.getElementById('genBtn');
+  const loader = document.getElementById('loader');
+  const output = document.getElementById('output');
+
+  btn.disabled = true;
+  loader.style.display = 'block';
+  output.classList.remove('on');
+
+  const toonOmschrijving = tonen.map(t => toonLabels[t] || t).join(' en ');
+
+  const prompt = `Jij schrijft warme, persoonlijke kaartteksten namens cvo MIRAS voor handgeschreven kaartjes.
+
+GEGEVENS VAN DE ONTVANGER:
+- Naam: ${naam}
+- Functie: ${functie || 'niet opgegeven'}
+- Opleiding of dienst: ${team || 'niet opgegeven'}
+- Lesdomein / vakgebied / expertise: ${domein || 'niet opgegeven'}
+- Persoonlijke kenmerken of sterktes: ${interesses || 'niet opgegeven'}
+- Situatie: ${situatie}
+- Gewenste toon: ${toonOmschrijving}
+- Extra context (verwerk de inhoud hiervan creatief — citeer nooit letterlijk): ${ctx || 'niet opgegeven'}
+
+SCHRIJFREGELS:
+- Begin elk kaartje met de aanspreking: "Beste ${naam},"
+- Gebruik altijd je/jij/jou
+- Schrijf "MIRAS" altijd in hoofdletters, "cvo MIRAS" met "cvo" in kleine letters
+- Schrijf eenvoudig, helder en toegankelijk — geen moeilijke woorden, geen lange zinnen
+- Maak het persoonlijk via het vakgebied, de functie, de sterktes of de context
+- Verwerk persoonlijke kenmerken en extra context nooit letterlijk — vertaal ze naar een eigen, vloeiende zin
+- Gebruik een vakgebied-gerelateerd beeld als dat past (subtiel, nooit geforceerd)
+- Geen managementtaal, geen clichés, geen overdreven emoties
+
+VERBODEN ZINNEN EN WOORDEN — gebruik deze nooit:
+- "woorden schieten tekort"
+- "je bent een topper"
+- "bedankt voor alles"
+- "geniet van je welverdiende rust"
+- "onmisbaar"
+- "een nieuwe bladzijde omslaan"
+- "het ga je goed"
+- "sterkte" als enige afsluiting bij moeilijke situaties (gebruik warmere alternatieven)
+
+OPBOUW:
+1. Aanspreking: "Beste ${naam},"
+2. Eventuele tooninstap (kort, passend bij de situatie)
+3. Kern: persoonlijke boodschap
+4. Warme afsluiting
+
+OUTPUT — geef ALLEEN dit terug, niets anders, geen uitleg, geen nummering buiten de tags:
+
+===VARIANT1===
+[Korte, directe kaarttekst: 3 à 4 zinnen. Bondig. Trefzeker. Meteen ter zake. Gebruik een andere invalshoek dan variant 2.]
+===VARIANT2===
+[Warmere, persoonlijkere kaarttekst: 5 à 6 zinnen. Meer beeldend. Verhalender. Gebruik bewust andere woorden, een andere structuur en een andere emotionele insteek dan variant 1.]`;
+
+  try {
+    const res = await fetch('/genereer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.fout || 'Serverfout');
+    }
+
+    const data = await res.json();
+    const text = data.tekst || '';
+
+    const m1 = text.match(/===VARIANT1===([\s\S]*?)===VARIANT2===/);
+    const m2 = text.match(/===VARIANT2===([\s\S]*?)$/);
+
+    const v1 = m1 ? m1[1].trim() : 'Kon geen tekst genereren. Probeer opnieuw.';
+    const v2 = m2 ? m2[1].trim() : 'Kon geen tekst genereren. Probeer opnieuw.';
+
+    document.getElementById('v1').innerText = v1;
+    document.getElementById('v2').innerText = v2;
+    output.classList.add('on');
+    setTimeout(() => output.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+
+  } catch(e) {
+    alert('Er ging iets mis bij het genereren. Controleer je internetverbinding en probeer opnieuw.');
+  }
+
+  btn.disabled = false;
+  loader.style.display = 'none';
+}
+
+function kopieer(id, btn) {
+  const tekst = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(tekst).then(() => {
+    btn.classList.add('ok');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg> Gekopieerd!`;
+    setTimeout(() => {
+      btn.classList.remove('ok');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Kopieer tekst`;
+    }, 2200);
+  });
+}
+</script>
+</body>
+</html>
